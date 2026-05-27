@@ -2,7 +2,7 @@ import requests
 from fastapi import HTTPException
 import os
 from dotenv import load_dotenv
-
+load_dotenv()
 def fetch_weather(city: str, unit: str="metric"):
     api_key = os.getenv("API_KEY")
     url = (
@@ -45,4 +45,3 @@ def fetch_detailed_weather(city:str):
     }
     return detailed_weather
 
-load_dotenv()

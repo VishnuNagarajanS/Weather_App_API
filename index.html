@@ -475,8 +475,7 @@
 </div>
 
 <script>
-  const BASE = "http://127.0.0.1:8000";
-
+  const BASE = window.location.origin;
   function loading(el) {
     el.classList.add('visible');
     el.innerHTML = `<div class="msg loading">⟳ &nbsp;Fetching data from API...</div>`;
