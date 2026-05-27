@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from services.weather_service import fetch_weather, fetch_detailed_weather
 from models.weather_model import WeatherResponse, DetailedWeatherResponse
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -13,8 +14,8 @@ app.add_middleware(
 )
 
 @app.get("/")
-def home():
-    return {"message": "Weather API App Running"}
+def frontend():
+    return FileResponse("index.html")
 
 @app.get("/weather/{city}", response_model=WeatherResponse)
 def get_weather(city: str):
@@ -31,3 +32,4 @@ def search_weather(city: str = Query(..., min_length=2, max_length=30, descripti
 @app.get("/health")
 def health_check():
     return {"status": "API is running successfully"}
+
