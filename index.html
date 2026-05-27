@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather API</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080810;
+      --surface:   #0e0e1c;
+      --surface2:  #13132a;
+      --border:    #1e1e40;
+      --border2:   #2d2d60;
+      --purple:    #a855f7;
+      --purple2:   #7c3aed;
+      --purple3:   #c084fc;
+      --purple-dim:#3b1f6e;
+      --text:      #ede9fe;
+      --muted:     #6b5fa0;
+      --success:   #34d399;
+      --error:     #f87171;
+      --warn:      #fb923c;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(168,85,247,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168,85,247,0.04) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 52px 24px 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    header {
+      margin-bottom: 60px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .logo {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--purple2), var(--purple));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      border: 1px solid rgba(168,85,247,0.4);
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    h1 span {
+      background: linear-gradient(135deg, var(--purple3), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      margin-left: 58px;
+    }
+
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--success);
+      letter-spacing: 1px;
+      margin-left: auto;
+    }
+    .live-dot::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 10px 0 30px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 26px;
+      margin-bottom: 18px;
+      animation: fadeUp 0.5s ease both;
+      transition: border-color 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent);
+    }
+    .card:hover { border-color: var(--border2); }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .method-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--purple3);
+      background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 4px;
+      padding: 2px 8px;
+      letter-spacing: 1px;
+    }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .endpoint-desc {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Inputs ── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input, select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 10px 14px;
+      outline: none;
+      flex: 1;
+      min-width: 140px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus, select:focus {
+      border-color: var(--purple2);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+    select option { background: #13132a; }
+
+    button {
+      background: linear-gradient(135deg, var(--purple2), var(--purple));
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 22px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    button:hover { opacity: 0.88; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    /* ── Result area ── */
+    .result {
+      margin-top: 18px;
+      display: none;
+    }
+    .result.visible { display: block; }
+
+    /* ── Weather display ── */
+    .weather-display {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .weather-display::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; right: -40px;
+      width: 150px; height: 150px;
+      background: radial-gradient(circle, rgba(124,58,237,0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+    .weather-city {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .weather-country {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      margin-top: 2px;
+    }
+
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: border-color 0.2s;
+    }
+    .stat-box:hover { border-color: var(--border2); }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--purple3);
+    }
+    .stat-value.green  { color: var(--success); }
+    .stat-value.orange { color: var(--warn); }
+    .stat-value.white  { color: var(--text); }
+
+    .weather-condition {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+      text-transform: capitalize;
+      background: rgba(168,85,247,0.08);
+      border: 1px solid rgba(168,85,247,0.2);
+      border-radius: 8px;
+      padding: 7px 14px;
+    }
+    .weather-condition::before {
+      content: '◈';
+      color: var(--purple);
+      font-size: 11px;
+    }
+
+    /* ── Messages ── */
+    .msg {
+      padding: 12px 16px;
+      border-radius: 9px;
+      font-size: 12px;
+    }
+    .msg.loading {
+      background: rgba(168,85,247,0.06);
+      border: 1px solid rgba(168,85,247,0.15);
+      color: var(--muted);
+    }
+    .msg.error {
+      background: rgba(248,113,113,0.07);
+      border: 1px solid rgba(248,113,113,0.2);
+      color: var(--error);
+    }
+
+    /* ── Health ── */
+    .health-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .health-text {
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+    }
+    .health-text.visible { display: block; }
+    .health-text.ok   { color: var(--success); }
+    .health-text.fail { color: var(--error); }
+
+    /* ── Animations ── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.12s; }
+    .card:nth-child(3) { animation-delay: 0.19s; }
+    .card:nth-child(4) { animation-delay: 0.26s; }
+
+    @media (max-width: 520px) {
+      h1 { font-size: 20px; }
+      .live-dot { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-top">
+      <div class="logo">🌦</div>
+      <h1>Weather <span>API</span> Dashboard</h1>
+      <div class="live-dot">LIVE</div>
+    </div>
+    <p class="subtitle">FastAPI + OpenWeather — all endpoints in one place</p>
+  </header>
+
+  <!-- Health -->
+  <p class="section-label">System</p>
+  <div class="card">
+    <div class="card-title">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-path">/health</span>
+      <span class="endpoint-desc">— server status</span>
+    </div>
+    <div class="health-row">
+      <button onclick="checkHealth(this)">Check Health</button>
+      <div class="health-text" id="health-text"></div>
+    </div>
+  </div>
+
+  <hr />
+  <p class="section-label">Endpoints</p>
+
+  <!-- Simple Weather -->
+  <div class="card">
+    <div class="card-title">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-path">/weather/{city}</span>
+      <span class="endpoint-desc">— basic weather</span>
+    </div>
+    <div class="input-row">
+      <input id="simple-city" type="text" placeholder="City name  e.g. Mumbai" />
+      <button onclick="fetchSimple(this)">Fetch</button>
+    </div>
+    <div class="result" id="simple-result"></div>
+  </div>
+
+  <!-- Detailed Weather -->
+  <div class="card">
+    <div class="card-title">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-path">/weather-report/{city}</span>
+      <span class="endpoint-desc">— detailed report</span>
+    </div>
+    <div class="input-row">
+      <input id="detailed-city" type="text" placeholder="City name  e.g. Delhi" />
+      <button onclick="fetchDetailed(this)">Fetch Report</button>
+    </div>
+    <div class="result" id="detailed-result"></div>
+  </div>
+
+  <!-- Search Weather -->
+  <div class="card">
+    <div class="card-title">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-path">/search-weather</span>
+      <span class="endpoint-desc">— query params + unit</span>
+    </div>
+    <div class="input-row">
+      <input id="search-city" type="text" placeholder="City name" />
+      <select id="search-unit">
+        <option value="metric">°C — metric</option>
+        <option value="imperial">°F — imperial</option>
+      </select>
+      <button onclick="fetchSearch(this)">Search</button>
+    </div>
+    <div class="result" id="search-result"></div>
+  </div>
+
+</div>
+
+<script>
+  const BASE = "http://127.0.0.1:8000";
+
+  function loading(el) {
+    el.classList.add('visible');
+    el.innerHTML = `<div class="msg loading">⟳ &nbsp;Fetching data from API...</div>`;
+  }
+  function error(el, msg) {
+    el.classList.add('visible');
+    el.innerHTML = `<div class="msg error">✗ &nbsp;${msg}</div>`;
+  }
+  function unit(u) { return u === 'imperial' ? '°F' : '°C'; }
+
+  function renderWeather(el, d, u = 'metric') {
+    const country = d.country
+      ? `<div class="weather-country">${d.country}</div>`
+      : `<div style="height:18px"></div>`;
+    const extras = d.feels_like !== undefined ? `
+      <div class="stat-box"><div class="stat-label">Feels Like</div><div class="stat-value">${d.feels_like}${unit(u)}</div></div>
+      <div class="stat-box"><div class="stat-label">Wind Speed</div><div class="stat-value orange">${d.wind_speed} m/s</div></div>
+    ` : '';
+
+    el.classList.add('visible');
+    el.innerHTML = `
+      <div class="weather-display">
+        <div class="weather-city">${d.city}</div>
+        ${country}
+        <div class="weather-grid">
+          <div class="stat-box"><div class="stat-label">Temperature</div><div class="stat-value">${d.temperature}${unit(u)}</div></div>
+          <div class="stat-box"><div class="stat-label">Humidity</div><div class="stat-value green">${d.humidity}%</div></div>
+          ${extras}
+        </div>
+        <div class="weather-condition">${d.weather}</div>
+      </div>`;
+  }
+
+  async function checkHealth(btn) {
+    btn.disabled = true;
+    const el = document.getElementById('health-text');
+    el.className = 'health-text visible';
+    el.textContent = '⟳  checking...';
+    try {
+      const res = await fetch(`${BASE}/health`);
+      const d = await res.json();
+      el.className = 'health-text visible ok';
+      el.textContent = `✓  ${d.status}`;
+    } catch {
+      el.className = 'health-text visible fail';
+      el.textContent = '✗  Cannot reach API — is the server running?';
+    }
+    btn.disabled = false;
+  }
+
+  async function fetchSimple(btn) {
+    const city = document.getElementById('simple-city').value.trim();
+    const el = document.getElementById('simple-result');
+    if (!city) return;
+    btn.disabled = true; loading(el);
+    try {
+      const res = await fetch(`${BASE}/weather/${encodeURIComponent(city)}`);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'City not found');
+      renderWeather(el, d);
+    } catch(e) { error(el, e.message); }
+    btn.disabled = false;
+  }
+
+  async function fetchDetailed(btn) {
+    const city = document.getElementById('detailed-city').value.trim();
+    const el = document.getElementById('detailed-result');
+    if (!city) return;
+    btn.disabled = true; loading(el);
+    try {
+      const res = await fetch(`${BASE}/weather-report/${encodeURIComponent(city)}`);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'City not found');
+      renderWeather(el, d);
+    } catch(e) { error(el, e.message); }
+    btn.disabled = false;
+  }
+
+  async function fetchSearch(btn) {
+    const city = document.getElementById('search-city').value.trim();
+    const u = document.getElementById('search-unit').value;
+    const el = document.getElementById('search-result');
+    if (!city) return;
+    btn.disabled = true; loading(el);
+    try {
+      const res = await fetch(`${BASE}/search-weather?city=${encodeURIComponent(city)}&unit=${u}`);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'City not found');
+      renderWeather(el, d, u);
+    } catch(e) { error(el, e.message); }
+    btn.disabled = false;
+  }
+
+  document.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') inp.closest('.card').querySelector('button').click();
+    });
+  });
+</script>
+</body>
+</html>

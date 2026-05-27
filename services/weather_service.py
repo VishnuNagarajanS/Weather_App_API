@@ -3,7 +3,7 @@ from fastapi import HTTPException
 import os
 from dotenv import load_dotenv
 
-def fetch_weather(city: str, unit: str):
+def fetch_weather(city: str, unit: str="metric"):
     api_key = os.getenv("API_KEY")
     url = (
         f"https://api.openweathermap.org/data/2.5/weather"
